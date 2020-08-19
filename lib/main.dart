@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
+import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -17,6 +20,11 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   final toDoController = TextEditingController();
+  final comentController = TextEditingController();
+
+  List toDoList = [];
+
+  GlobalKey<FormState> formkey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -29,7 +37,6 @@ class _HomeState extends State<Home> {
     });
   }
 
-  List toDoList = [];
   Map<String, dynamic> lastRemoved;
   int lastRemovedPos;
 
@@ -37,6 +44,7 @@ class _HomeState extends State<Home> {
     setState(() {
       Map<String, dynamic> newToDo = Map();
       newToDo["title"] = toDoController.text;
+      newToDo["coment"] = "";
       newToDo["ok"] = false;
       toDoList.add(newToDo);
       saveData();
@@ -90,23 +98,39 @@ class _HomeState extends State<Home> {
         ),
       ),
       direction: DismissDirection.startToEnd,
-      child: CheckboxListTile(
-        onChanged: (c) {
-          setState(() {
-            toDoList[index]["ok"] = c;
-            saveData();
-          });
-        },
-        title: Text(toDoList[index]["title"]),
-        subtitle: Text("OI"),
-        activeColor: Colors.lightGreen,
-        value: toDoList[index]["ok"],
-        tristate: true,
-        secondary: CircleAvatar(
-          child: Icon(toDoList[index]["ok"] ? Icons.check : Icons.error),
-        ),
-      ),
-
+      child: ListTile(
+          onTap: () {
+            setState(() {
+              bool status = toDoList[index]["ok"];
+              if (status == true) {
+                toDoList[index]["ok"] = false;
+              } else {
+                toDoList[index]["ok"] = true;
+              }
+              saveData();
+            });
+          },
+          title: Text(toDoList[index]["title"]),
+          subtitle: Text(toDoList[index]["coment"]),
+          leading: CircleAvatar(
+            backgroundColor: toDoList[index]["ok"] ? Colors.green : Colors.blue,
+            child: mudaIcone(toDoList[index]["ok"]),
+          ),
+          trailing: Container(
+            child: IconButton(
+                icon: Icon(Icons.add_comment),
+                onPressed: () {
+                  if (toDoList[index]["coment"] == null ||
+                      toDoList[index]["coment"] == "") {
+                    comentController.clear();
+                  } else {
+                    comentController.text = toDoList[index]["coment"];
+                  }
+                  _settingModalBottomSheet(context, index);
+                }),
+            height: 50,
+            width: 50,
+          )),
       onDismissed: (direction) {
         setState(() {
           lastRemoved = Map.from(toDoList[index]);
@@ -128,8 +152,74 @@ class _HomeState extends State<Home> {
           Scaffold.of(context).showSnackBar(snack);
         });
       },
-
     );
+  }
+
+  Widget mudaIcone(bool status) {
+    if (status == true) {
+      return Icon(
+        Icons.check,
+        color: Colors.white,
+      );
+    } else {
+      return Icon(
+        Icons.error,
+        color: Colors.white,
+      );
+    }
+  }
+
+  void _settingModalBottomSheet(context, int index) {
+    showModalBottomSheet(
+        context: context,
+        builder: (BuildContext bc) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Expanded(
+                  flex: 1,
+                  child: Container(
+                    child: new Wrap(
+                      children: <Widget>[
+                        Padding(
+                          padding: EdgeInsets.all(10),
+                          child: Container(
+                            alignment: AlignmentDirectional.center,
+                            child: Text(
+                              "Digite uma descrição:",
+                              style: TextStyle(fontSize: 16),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                        new Padding(
+                          padding: EdgeInsets.fromLTRB(10.0, 15.0, 15.0, 10.0),
+                          child: TextField(
+                            controller: comentController,
+                            decoration: InputDecoration(
+                              icon: Icon(Icons.edit),
+                              labelText: "Descrição",
+                              labelStyle: TextStyle(color: Colors.blueAccent),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                lastRemoved = Map.from(toDoList[index]);
+                                lastRemovedPos = index;
+                                toDoList.removeAt(index);
+                                lastRemoved["coment"] = comentController.text;
+
+                                toDoList.insert(lastRemovedPos, lastRemoved);
+                                saveData();
+                              });
+                            },
+                          ),
+                        )
+                      ],
+                    ),
+                  ))
+            ],
+          );
+        });
   }
 
   @override
@@ -143,26 +233,37 @@ class _HomeState extends State<Home> {
       body: Column(
         children: <Widget>[
           Container(
-            padding: EdgeInsets.fromLTRB(17.0, 1.0, 7.0, 1.0),
-            child: Row(
-              children: <Widget>[
-                Expanded(
-                  child: TextField(
-                    controller: toDoController,
-                    decoration: InputDecoration(
-                        labelText: "Nova Tarefa",
-                        labelStyle: TextStyle(color: Colors.blueAccent)),
-                  ),
+              padding: EdgeInsets.fromLTRB(17.0, 1.0, 7.0, 1.0),
+              child: Form(
+                key: formkey,
+                child: Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: TextFormField(
+                        controller: toDoController,
+                        decoration: InputDecoration(
+                            labelText: "Nova Tarefa",
+                            labelStyle: TextStyle(color: Colors.blueAccent)),
+                        validator: (value) {
+                          if (value.isEmpty) {
+                            return "ops.. Esta sem tarefas?";
+                          }
+                        },
+                      ),
+                    ),
+                    RaisedButton(
+                      onPressed: () {
+                        if (formkey.currentState.validate()) {
+                          addToDo();
+                        }
+                      },
+                      color: Colors.blueAccent,
+                      child: Icon(Icons.add, color: Colors.white),
+                      textColor: Colors.white,
+                    )
+                  ],
                 ),
-                RaisedButton(
-                  onPressed: addToDo,
-                  color: Colors.blueAccent,
-                  child: Icon(Icons.add, color: Colors.white),
-                  textColor: Colors.white,
-                )
-              ],
-            ),
-          ),
+              )),
           Expanded(
               child: RefreshIndicator(
             child: ListView.builder(
