@@ -6,6 +6,7 @@ import 'dart:ui';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:share/share.dart';
 
 void main() {
   runApp(MaterialApp(
@@ -144,6 +145,7 @@ class _HomeState extends State<Home> {
                 onPressed: () {
                   setState(() {
                     toDoList.insert(lastRemovedPos, lastRemoved);
+                    saveData();
                   });
                 }),
             duration: Duration(seconds: 3),
@@ -229,6 +231,35 @@ class _HomeState extends State<Home> {
         title: Text("Lista de Tarefas"),
         backgroundColor: Colors.blueAccent,
         centerTitle: true,
+        actions: <Widget>[
+          IconButton(
+            icon: Icon(Icons.share),
+            onPressed: () {
+              int i = 0;
+              String mensagem = "      *** Lista de Tarefas ***\n";
+              int j = 1;
+              for (i = 0; i < toDoList.length; i++) {
+                String titulo = toDoList[i]["title"];
+                String situacao = toDoList[i]["ok"] ? "Feito" : "Pendente";
+                String coment = toDoList[i]["coment"];
+                dynamic meg = (titulo + situacao).split("").length;
+                int limite = 30;
+                String pontos = "";
+                int h;
+                if (meg < limite) {
+                  int calc = limite - meg;
+
+                  for (h = 0; h < calc; h++) {
+                    pontos += ".";
+                  }
+                }
+                mensagem += "$j - $titulo $pontos $situacao\n" + (coment != "" ? "*$coment\n" : "");
+                j++;
+              }
+              Share.share(mensagem);
+            },
+          )
+        ],
       ),
       body: Column(
         children: <Widget>[
