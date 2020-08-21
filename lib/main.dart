@@ -243,7 +243,7 @@ class _HomeState extends State<Home> {
                 String situacao = toDoList[i]["ok"] ? "Feito" : "Pendente";
                 String coment = toDoList[i]["coment"];
                 dynamic meg = (titulo + situacao).split("").length;
-                int limite = 30;
+                int limite = 45;
                 String pontos = "";
                 int h;
                 if (meg < limite) {
@@ -253,7 +253,8 @@ class _HomeState extends State<Home> {
                     pontos += ".";
                   }
                 }
-                mensagem += "$j - $titulo $pontos $situacao\n" + (coment != "" ? "*$coment\n" : "");
+                mensagem += "$j - $titulo $pontos - $situacao\n" +
+                    (coment != "" ? "*$coment\n\n" : "\n");
                 j++;
               }
               Share.share(mensagem);
