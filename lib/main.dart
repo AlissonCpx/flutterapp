@@ -236,24 +236,14 @@ class _HomeState extends State<Home> {
             icon: Icon(Icons.share),
             onPressed: () {
               int i = 0;
-              String mensagem = "      *** Lista de Tarefas ***\n";
+              String mensagem = "*Lista de Tarefas:*\n";
               int j = 1;
               for (i = 0; i < toDoList.length; i++) {
                 String titulo = toDoList[i]["title"];
-                String situacao = toDoList[i]["ok"] ? "Feito" : "Pendente";
+                String situacao = toDoList[i]["ok"] ? "Concluído" : "Pendente";
                 String coment = toDoList[i]["coment"];
-                dynamic meg = (titulo + situacao).split("").length;
-                int limite = 45;
-                String pontos = "";
-                int h;
-                if (meg < limite) {
-                  int calc = limite - meg;
 
-                  for (h = 0; h < calc; h++) {
-                    pontos += ".";
-                  }
-                }
-                mensagem += "$j - $titulo $pontos - $situacao\n" +
+                mensagem += "$j. $titulo - ($situacao)\n" +
                     (coment != "" ? "*$coment\n\n" : "\n");
                 j++;
               }
